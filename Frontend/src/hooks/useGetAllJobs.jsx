@@ -15,29 +15,35 @@ const useGetAllJobs = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await axios.get(
-          `${JOB_API_ENDPOINT}/get?keyword=${searchedQuery}`,
-          {
-            withCredentials: true,
-          }
-        );
+        const token = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("token="))
+          ?.split("=")[1]; // Extract token from cookies
+
+        const res = await axios.get(`${JOB_API_ENDPOINT}/get?keyword=${searchedQuery}`, {
+          headers: {
+            Authorization: `Bearer ${token}`, // Send token in headers
+          },
+          withCredentials: true, // Ensure cookies are sent with the request
+        });
+
         console.log("API Response:", res.data);
-        if (res.data.status) {
-          // Updated success check
+
+        if (res.data.success) {
           dispatch(setAllJobs(res.data.jobs));
         } else {
           setError("Failed to fetch jobs.");
         }
       } catch (error) {
         console.error("Fetch Error:", error);
-        setError(error.message || "An error occurred.");
+        setError(error.response?.data?.message || "An error occurred.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchAllJobs();
-  }, [dispatch]);
+  }, [dispatch, searchedQuery]);
 
   return { loading, error };
 };
